@@ -10,7 +10,7 @@ import static ru.netology.api.data.User.Card.getCard;
 
 public class MoneyTransferTest {
     private User.UserLogin existUser = User.UserLogin.getUser();
-//    private String token = User.getToken();
+    private String tokenFinally = User.getToken();
     private String token = loginVerifyAndGetToken();
 
 
@@ -26,10 +26,10 @@ public class MoneyTransferTest {
         if (diff != 0) {
             if (diff < 0) {
                 transfer(token,
-                        new Transaction("5559 0000 0000 0001", "5559 0000 0000 0002", Math.abs(diff)));
+                        new Transaction(getCard(2).getCardNumber(), getCard(1).getCardNumber(), Math.abs(diff)));
             } else {
                 transfer(token,
-                        new Transaction("5559 0000 0000 0002", "5559 0000 0000 0001", Math.abs(diff)));
+                        new Transaction(getCard(1).getCardNumber(), getCard(2).getCardNumber(), Math.abs(diff)));
             }
         }
     }
