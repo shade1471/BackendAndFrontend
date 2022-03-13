@@ -1,112 +1,55 @@
 package ru.netology.api.data;
 
-import com.google.gson.Gson;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.filter.log.LogDetail;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
-import lombok.SneakyThrows;
-import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.Value;
 
-import java.sql.DriverManager;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import java.util.UUID;
 
 public class DataGenerator {
 
-    static RequestSpecification requestSpec = new RequestSpecBuilder()
-            .setBaseUri("http://localhost/api")
-            .setPort(9999)
-            .setAccept(ContentType.JSON)
-            .setContentType(ContentType.JSON)
-            .log(LogDetail.ALL)
-            .build();
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UserLogin {
+        private String login;
+        private String password;
 
-    @SneakyThrows
-    public static String getVerificationCodeFor(String login) {
-        QueryRunner runner = new QueryRunner();
-        var codeSQL = "SELECT code" +
-                " FROM auth_codes ac JOIN users u ON ac.user_id = u.id" +
-                " WHERE login='" + login + "'" +
-                " ORDER BY created DESC" +
-                " LIMIT 1;";
-        try (
-                var conn = DriverManager.getConnection(
-                        "jdbc:mysql://localhost:3306/app", "shade1471", "shade1471"
-                );
-        ) {
-            var code = runner.query(conn, codeSQL, new ScalarHandler<>()).toString();
-            return code;
+        public static UserLogin getUser() {
+            return new UserLogin("vasya", "qwerty123");
         }
     }
 
-    public static void loginUser(User.UserLogin userLogin) {
-        given() // "дано"
-
-                .spec(requestSpec)// указываем, какую спецификацию используем
-                .body(new Gson().toJson(userLogin))
-                .when() // "когда"
-                .post("/auth") // на какой путь, относительно BaseUri отправляем запрос
-                .then()
-                .statusCode(200);
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UserVerify {
+        private String login;
+        private String code;
     }
 
-    public static String verifyUser(User.UserVerify user) {
-        String token = given() // "дано"
-                .spec(requestSpec)// указываем, какую спецификацию используем
-                .body(new Gson().toJson(user))
-                .when() // "когда"
-                .post("/auth/verification") // на какой путь, относительно BaseUri отправляем запрос
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("token");
+    @Value
+    public static class Card {
+        private String cardId;
+        private String cardNumber;
 
-        return token;
+        private static Card[] cards =
+                {new Card("0f3f5c2a-249e-4c3d-8287-09f7a039391d", "5559 0000 0000 0002"),
+                        new Card("92df3f1c-a033-48e6-8390-206f6b1f56c0", "5559 0000 0000 0001")};
+
+        public static Card getCard(int number) {
+            return cards[number - 1];
+        }
+
+        public static Card getUnknownCard() {
+            return new Card(UUID.randomUUID().toString(), "5559 0000 0000 0008");
+        }
     }
 
-    public static void transfer(String token, Transaction info) {
-        given() // "дано"
-                .headers("Authorization",
-                        "Bearer " + token)
-                .spec(requestSpec)// указываем, какую спецификацию используем
-                .body(new Gson().toJson(info))
-                .when() // "когда"
-                .post("/transfer") // на какой путь, относительно BaseUri отправляем запрос
-                .then()
-                .statusCode(200);
+    public static String getToken() {
+        return "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsb2dpbiI6InZhc3lhIn0.JmhHh8NXwfqktXSFbzkPohUb90gnc3yZ9tiXa0uUpRY";
     }
 
-    public static void transferWrong(String token, Transaction info) {
-        given() // "дано"
-                .headers("Authorization",
-                        "Bearer " + token)
-                .spec(requestSpec)// указываем, какую спецификацию используем
-                .body(new Gson().toJson(info))
-                .when() // "когда"
-                .post("/transfer") // на какой путь, относительно BaseUri отправляем запрос
-                .then()
-                .statusCode(400);
-    }
 
-    public static int getCardBalance(String token, int number) {
-        int balance = given()
-                .headers("Authorization",
-                        "Bearer " + token)// "дано"
-                .spec(requestSpec)// указываем, какую спецификацию используем
-                .when() // "когда"
-                .get("/cards") // на какой путь, относительно BaseUri отправляем запрос
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("[" + (number - 1) + "].balance");
-        return balance;
-    }
-
-//    public static int getNumberCard(){
-//
-//    }
 }

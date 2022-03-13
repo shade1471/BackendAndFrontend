@@ -1,23 +1,28 @@
 package ru.netology.api;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import ru.netology.api.data.DataGenerator;
 import ru.netology.api.data.Transaction;
-import ru.netology.api.data.User;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static ru.netology.api.data.DataGenerator.*;
-import static ru.netology.api.data.User.Card.getCard;
+import static ru.netology.api.utils.ApiRequest.*;
+import static ru.netology.api.data.DataGenerator.Card.getCard;
+import static ru.netology.api.data.DataGenerator.Card.getUnknownCard;
+import static ru.netology.api.data.DataGenerator.UserLogin.getUser;
+import static ru.netology.api.utils.SQLRequest.clearAll;
+import static ru.netology.api.utils.SQLRequest.getVerificationCodeFor;
 
 public class MoneyTransferTest {
-    private User.UserLogin existUser = User.UserLogin.getUser();
-    private String tokenFinally = User.getToken();
+    private DataGenerator.UserLogin existUser = getUser();
+    private String tokenFinally = DataGenerator.getToken();
     private String token = loginVerifyAndGetToken();
 
 
     public String loginVerifyAndGetToken() {
         loginUser(existUser);
         String code = getVerificationCodeFor(existUser.getLogin());
-        String token = verifyUser(new User.UserVerify(existUser.getLogin(), code));
+        String token = verifyUser(new DataGenerator.UserVerify(existUser.getLogin(), code));
         return token;
     }
 
@@ -32,6 +37,11 @@ public class MoneyTransferTest {
                         new Transaction(getCard(1).getCardNumber(), getCard(2).getCardNumber(), Math.abs(diff)));
             }
         }
+    }
+
+    @AfterAll
+    public static void clear() {
+        clearAll();
     }
 
     @Test
@@ -52,7 +62,7 @@ public class MoneyTransferTest {
         refresh(token);
         int amount = 5000;
         int currentBalanceCardOne = getCardBalance(token, 1);
-        transfer(token, new Transaction(getCard(1).getCardNumber(), "5559 0000 0000 0008", amount));
+        transfer(token, new Transaction(getCard(1).getCardNumber(), getUnknownCard().getCardNumber(), amount));
         int actualFirstCard = getCardBalance(token, 1);
         assertEquals(currentBalanceCardOne - amount, actualFirstCard);
     }
